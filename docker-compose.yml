@@ -113,3 +113,27 @@ services:
     ports:
       - 8191:8191
     restart: unless-stopped
+
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    container_name: homarr
+    environment:
+      - TZ=${TZ}
+      - SECRET_ENCRYPTION_KEY=${HOMARR_SECRET}
+    volumes:
+      - ./config/homarr:/appdata
+    ports:
+      - 7575:7575
+    restart: unless-stopped
+
+  # On-demand: `docker compose run --rm recyclarr sync`
+  # Schedule via host cron if you want it automatic.
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:latest
+    container_name: recyclarr
+    user: ${PUID}:${PGID}
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ./config/recyclarr:/config
+    restart: "no"

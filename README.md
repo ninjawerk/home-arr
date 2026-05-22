@@ -14,6 +14,8 @@ Self-hosted media stack for a Raspberry Pi: the *arr suite in Docker plus Samba 
 | Bazarr       | 6767 | Subtitles for Sonarr/Radarr libraries         |
 | qBittorrent  | 8090 | Download client                               |
 | FlareSolverr | 8191 | Bypasses Cloudflare for some indexers         |
+| Homarr       | 7575 | Dashboard — single landing page for the stack |
+| Recyclarr    | —    | Syncs TRaSH-Guides quality profiles into *arr |
 
 Samba runs on the host (not in Docker) and shares `movies/` and `tv/` read-only so any device with an SMB client can stream from them.
 
@@ -64,7 +66,8 @@ sudo chown -R $USER:$USER /mnt/media
 git clone https://github.com/ninjawerk/home-arr.git
 cd home-arr
 cp .env.example .env
-# edit .env — set PUID/PGID (run `id`), TZ, MEDIA_ROOT
+# edit .env — set PUID/PGID (run `id`), TZ, MEDIA_ROOT, HOMARR_SECRET
+# generate the Homarr secret with: openssl rand -hex 32
 ```
 
 ### 3. Bring up the stack
@@ -79,6 +82,42 @@ Each service has a web UI on its port. First-run config:
 3. **Sonarr** (`:8989`) / **Radarr** (`:7878`) — add qBittorrent as download client, set root folder to `/tv` or `/movies`
 
 The [TRaSH Guides](https://trash-guides.info/) are the gold standard for *arr configuration — quality profiles, naming, indexers, the lot.
+
+### qBittorrent: don't seed after completion
+
+This stack is set up to grab, not to seed. After qBittorrent's first launch:
+
+1. Open `http://<pi>:8090`, log in
+2. **Tools → Options → BitTorrent → Seeding Limits**
+   - Tick **When ratio reaches:** `0`
+   - Tick **When seeding time reaches:** `0 minutes`
+   - **When limit is reached:** *Remove torrent* (or *Remove torrent and its files* if you want it gone the second Sonarr/Radarr have imported the copy)
+3. **Tools → Options → Downloads** → ensure *Keep incomplete torrents in:* points at `/downloads/incomplete` and *Default Save Path* at `/downloads`
+
+Note: if you ever join a **private tracker**, this config will get you banned — private trackers require seeding. Make a second qBittorrent category with normal seeding settings for those torrents.
+
+### Recyclarr — quality profiles from TRaSH
+
+Recyclarr is a one-shot CLI that pulls TRaSH-Guides profiles into Sonarr/Radarr. After the *arr apps are up:
+
+```bash
+# Generate a starter config
+docker compose run --rm recyclarr config create
+
+# Edit ./config/recyclarr/recyclarr.yml — paste in Sonarr/Radarr URLs + API keys
+# Then run a sync:
+docker compose run --rm recyclarr sync
+```
+
+To run it automatically, add a host crontab entry:
+
+```cron
+0 4 * * * cd /home/<user>/home-arr && /usr/bin/docker compose run --rm recyclarr sync
+```
+
+### Homarr — dashboard
+
+Open `http://<pi>:7575` to set it up. On first launch it walks you through creating an admin user, then you add each service as a tile (it can show queue counts, recent grabs, disk usage, etc.). The `SECRET_ENCRYPTION_KEY` in `.env` is used to encrypt the per-service API keys it stores.
 
 ### 4. Samba
 
