@@ -34,3 +34,17 @@
    read only = yes
    guest ok = yes
    guest only = yes
+
+[music]
+   path = /mnt/media/music
+   browseable = yes
+   read only = yes
+   guest ok = yes
+   guest only = yes
+
+[books]
+   path = /mnt/media/books
+   browseable = yes
+   read only = yes
+   guest ok = yes
+   guest only = yes

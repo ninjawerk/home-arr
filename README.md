@@ -9,6 +9,8 @@ Self-hosted media stack for a Raspberry Pi: the *arr suite in Docker plus Samba 
 | Prowlarr     | 9696 | Indexer manager — feeds Sonarr/Radarr         |
 | Sonarr       | 8989 | TV show automation                            |
 | Radarr       | 7878 | Movie automation                              |
+| Lidarr       | 8686 | Music automation                              |
+| Readarr      | 8787 | Book / audiobook automation                   |
 | Bazarr       | 6767 | Subtitles for Sonarr/Radarr libraries         |
 | qBittorrent  | 8090 | Download client                               |
 | FlareSolverr | 8191 | Bypasses Cloudflare for some indexers         |
@@ -52,7 +54,7 @@ sudo usermod -aG docker $USER
 sudo apt install samba
 
 # Mount your SSD at /mnt/media and create the layout
-sudo mkdir -p /mnt/media/{movies,tv,downloads}
+sudo mkdir -p /mnt/media/{movies,tv,music,books,downloads}
 sudo chown -R $USER:$USER /mnt/media
 ```
 
