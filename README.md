@@ -42,7 +42,52 @@ Phone (LunaSea / nzb360) ──HTTP+API key──► Sonarr/Radarr ──► qBi
 
 ## Setup
 
-### 1. Flash Raspberry Pi OS Lite
+There are two paths. **Remote deploy** is recommended — you run one script on your laptop and it provisions the Pi end to end.
+
+### Path A — Remote deploy from your laptop (recommended)
+
+**1. Flash Raspberry Pi OS Lite**
+
+Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/), pick **Pi OS Lite (64-bit)**, and open advanced options (`Cmd-Shift-X`):
+- **Hostname:** `home-arr`
+- **Enable SSH** → use public key, paste in your `~/.ssh/id_*.pub`
+- **Username + password** for the default user
+- **Wi-Fi** (or leave blank for ethernet — recommended)
+- **Locale + timezone**
+
+Flash, boot the Pi, plug in the USB SSD.
+
+**2. Clone this repo on your laptop**
+
+```bash
+git clone https://github.com/ninjawerk/home-arr.git
+cd home-arr
+```
+
+**3. Run the deploy script**
+
+```bash
+# If the SSD is already mounted at /mnt/media on the Pi:
+./scripts/deploy-to-pi.sh <user>@home-arr.local
+
+# Or let the script format + mount it for you:
+./scripts/deploy-to-pi.sh --ssd-device /dev/sda1 --format <user>@home-arr.local
+
+# Or mount an already-formatted SSD without erasing it:
+./scripts/deploy-to-pi.sh --ssd-device /dev/sda1 <user>@home-arr.local
+```
+
+The script SSHes into the Pi, installs Docker + Samba, mounts the SSD (if requested), clones this repo to `~/home-arr` on the Pi, auto-generates `.env` (PUID, PGID, TZ, Homarr secret), seeds the no-seed qBittorrent config, and brings up the whole stack. At the end it prints every service URL.
+
+Re-runnable safely — re-running on the same Pi just pulls the latest repo and `docker compose up -d` again.
+
+---
+
+### Path B — Manual install on the Pi
+
+If you'd rather SSH in and run things by hand:
+
+**1. Flash Raspberry Pi OS Lite**
 
 1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
 2. Pick: **Raspberry Pi OS Lite (64-bit)**
