@@ -73,6 +73,9 @@ cp .env.example .env
 ### 3. Bring up the stack
 
 ```bash
+# Seed qBittorrent's config with the no-seed defaults (see below) before first start
+./scripts/init-qbittorrent.sh
+
 docker compose up -d
 ```
 
@@ -85,16 +88,21 @@ The [TRaSH Guides](https://trash-guides.info/) are the gold standard for *arr co
 
 ### qBittorrent: don't seed after completion
 
-This stack is set up to grab, not to seed. After qBittorrent's first launch:
+This stack is set up to grab, not to seed. The `scripts/init-qbittorrent.sh` script (run during setup) copies `templates/qbittorrent/qBittorrent.conf` into place before the container's first start, which sets:
 
-1. Open `http://<pi>:8090`, log in
-2. **Tools → Options → BitTorrent → Seeding Limits**
-   - Tick **When ratio reaches:** `0`
-   - Tick **When seeding time reaches:** `0 minutes`
-   - **When limit is reached:** *Remove torrent* (or *Remove torrent and its files* if you want it gone the second Sonarr/Radarr have imported the copy)
-3. **Tools → Options → Downloads** → ensure *Keep incomplete torrents in:* points at `/downloads/incomplete` and *Default Save Path* at `/downloads`
+| Setting | Value | Effect |
+|---|---|---|
+| `Session\GlobalMaxRatio` | `0` | Stop seeding the moment a torrent finishes |
+| `Session\GlobalMaxSeedingMinutes` | `0` | Same, but on time basis |
+| `Session\MaxRatioAction` | `1` | Remove torrent from qBit (files stay on disk for *arr to import) |
+| `Session\DefaultSavePath` | `/downloads/` | Where completed downloads live |
+| `Session\TempPath` | `/downloads/incomplete/` | Where in-progress downloads live |
 
-Note: if you ever join a **private tracker**, this config will get you banned — private trackers require seeding. Make a second qBittorrent category with normal seeding settings for those torrents.
+No need to touch the UI after first launch — it's already configured.
+
+If you want to change these later, stop the container, edit `config/qbittorrent/qBittorrent/qBittorrent.conf` directly (or use the WebUI while running), then bring it back up. qBit will overwrite the file on graceful shutdown, so direct edits must happen while the container is stopped.
+
+**Important caveat:** if you ever join a **private tracker**, this config will get you banned — private trackers require seeding. Create a separate qBittorrent category in the UI with normal share limits and route private-tracker grabs to that category in Sonarr/Radarr.
 
 ### Recyclarr — quality profiles from TRaSH
 
