@@ -42,42 +42,63 @@ Phone (LunaSea / nzb360) ──HTTP+API key──► Sonarr/Radarr ──► qBi
 
 ## Setup
 
-### 1. Prepare the host
+### 1. Flash Raspberry Pi OS Lite
 
-Raspberry Pi OS Lite (64-bit). Then:
+1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
+2. Pick: **Raspberry Pi OS Lite (64-bit)**
+3. Open advanced options (`Cmd-Shift-X` on macOS, `Ctrl-Shift-X` on Linux/Windows):
+   - **Set hostname:** `home-arr`
+   - **Enable SSH** → use public key, paste in your `~/.ssh/id_*.pub`
+   - **Set username and password** for the default user
+   - **Configure Wi-Fi** (or leave blank if using ethernet — recommended)
+   - **Set locale** to your timezone
+4. Flash to the SD card, boot the Pi, find its IP from your router and:
+   ```bash
+   ssh <user>@home-arr.local   # or @<ip>
+   ```
+
+### 2. Mount the SSD at `/mnt/media`
+
+Plug in the USB 3 SSD (or NVMe via HAT). Then:
 
 ```bash
-# Docker
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-# log out + back in
+# Find the device name (look for sda1 or nvme0n1p1)
+lsblk
 
-# Samba on the host (not containerised)
-sudo apt install samba
+# Get the UUID
+sudo blkid /dev/sda1
 
-# Mount your SSD at /mnt/media and create the layout
-sudo mkdir -p /mnt/media/{movies,tv,music,books,downloads}
-sudo chown -R $USER:$USER /mnt/media
+# Persistent mount (replace UUID + filesystem type as needed)
+echo 'UUID=<your-uuid> /mnt/media ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
+sudo mkdir -p /mnt/media
+sudo mount -a
+
+# Confirm
+mountpoint /mnt/media   # should print "/mnt/media is a mountpoint"
 ```
 
-### 2. Clone + configure
+> **SSD not yet formatted?** `sudo mkfs.ext4 /dev/sda1` first (this erases the disk).
+
+### 3. Clone + configure
 
 ```bash
 git clone https://github.com/ninjawerk/home-arr.git
 cd home-arr
 cp .env.example .env
-# edit .env — set PUID/PGID (run `id`), TZ, MEDIA_ROOT, HOMARR_SECRET
-# generate the Homarr secret with: openssl rand -hex 32
+nano .env
+# Set: PUID/PGID (run `id`), TZ, MEDIA_ROOT, HOMARR_SECRET
+# Generate the Homarr secret with: openssl rand -hex 32
 ```
 
-### 3. Bring up the stack
+### 4. Run the bootstrap script
+
+One command installs Docker + Samba, wires up shares, seeds qBittorrent's no-seed config, and brings the whole stack up:
 
 ```bash
-# Seed qBittorrent's config with the no-seed defaults (see below) before first start
-./scripts/init-qbittorrent.sh
-
-docker compose up -d
+./scripts/bootstrap-pi.sh
 ```
+
+At the end it prints the URLs for every service and the IP + SMB share paths. The first time you run it you'll be added to the `docker` group — log out and back in once before running future `docker` commands without sudo.
 
 Each service has a web UI on its port. First-run config:
 1. **Prowlarr** (`:9696`) — add indexers, then link Sonarr + Radarr from Settings → Apps
