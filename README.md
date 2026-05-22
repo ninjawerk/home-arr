@@ -67,17 +67,25 @@ cd home-arr
 **3. Run the deploy script**
 
 ```bash
-# If the SSD is already mounted at /mnt/media on the Pi:
+# Fully interactive — asks for the target, lists disks, asks about formatting:
+./scripts/deploy-to-pi.sh
+
+# Or pass the SSH target up front:
 ./scripts/deploy-to-pi.sh <user>@home-arr.local
 
-# Or let the script format + mount it for you:
-./scripts/deploy-to-pi.sh --ssd-device /dev/sda1 --format <user>@home-arr.local
-
-# Or mount an already-formatted SSD without erasing it:
-./scripts/deploy-to-pi.sh --ssd-device /dev/sda1 <user>@home-arr.local
+# Or skip every prompt with flags:
+./scripts/deploy-to-pi.sh --ssd-device /dev/sda1 --format --yes <user>@home-arr.local
 ```
 
-The script SSHes into the Pi, installs Docker + Samba, mounts the SSD (if requested), clones this repo to `~/home-arr` on the Pi, auto-generates `.env` (PUID, PGID, TZ, Homarr secret), seeds the no-seed qBittorrent config, and brings up the whole stack. At the end it prints every service URL.
+When run interactively (the default), the script:
+
+1. Asks for the SSH target (or accepts it as an argument)
+2. Tests the connection
+3. Runs `lsblk` on the Pi and shows a numbered menu of mountable devices (system partitions are filtered out)
+4. Asks if the chosen disk should be formatted as ext4 (defaults to yes if there's no filesystem yet, no otherwise)
+5. Confirms the plan, then provisions everything: installs Docker + Samba, mounts the SSD, adds it to `/etc/fstab`, clones this repo to `~/home-arr` on the Pi, auto-generates `.env` (PUID, PGID, TZ, Homarr secret), seeds the no-seed qBittorrent config, and brings up the whole stack.
+
+At the end it prints every service URL.
 
 Re-runnable safely — re-running on the same Pi just pulls the latest repo and `docker compose up -d` again.
 
