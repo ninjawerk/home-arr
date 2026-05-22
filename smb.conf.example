@@ -1,0 +1,36 @@
+# Sample /etc/samba/smb.conf for home-arr
+# Serves the media library read-only to the network so Infuse / VLC / Kodi can stream.
+#
+# Install Samba on the host (not in a container):
+#   sudo apt install samba
+# Copy the relevant sections into /etc/samba/smb.conf, then:
+#   sudo systemctl restart smbd
+
+[global]
+   workgroup = WORKGROUP
+   server string = home-arr
+   server role = standalone server
+   # Modern protocol only — clients all support SMB3
+   server min protocol = SMB2
+   # Discovery on the local network
+   local master = yes
+   preferred master = yes
+   # Disable printing (Pi has no printers)
+   load printers = no
+   printing = bsd
+   printcap name = /dev/null
+   disable spoolss = yes
+
+[movies]
+   path = /mnt/media/movies
+   browseable = yes
+   read only = yes
+   guest ok = yes
+   guest only = yes
+
+[tv]
+   path = /mnt/media/tv
+   browseable = yes
+   read only = yes
+   guest ok = yes
+   guest only = yes
