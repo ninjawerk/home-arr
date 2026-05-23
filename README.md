@@ -42,7 +42,11 @@ Phone (LunaSea / nzb360) ──HTTP+API key──► Sonarr/Radarr ──► qBi
 
 ## Setup
 
-There are two paths. **Remote deploy** is recommended — you run one script on your laptop and it provisions the Pi end to end.
+Three paths depending on where you want to run this:
+
+- **Path A — Remote deploy a Raspberry Pi** (recommended for a dedicated box)
+- **Path B — Manual install on the Pi** (if you'd rather drive it from SSH yourself)
+- **Path C — Local install on macOS** (just run it on your Mac with Docker Desktop)
 
 ### Path A — Remote deploy from your laptop (recommended)
 
@@ -159,6 +163,37 @@ Each service has a web UI on its port. First-run config:
 3. **Sonarr** (`:8989`) / **Radarr** (`:7878`) — add qBittorrent as download client, set root folder to `/tv` or `/movies`
 
 The [TRaSH Guides](https://trash-guides.info/) are the gold standard for *arr configuration — quality profiles, naming, indexers, the lot.
+
+### Path C — Local install on macOS
+
+Run the stack directly on your Mac (uses Docker Desktop + macOS's built-in SMB server). Good for trying it out before committing to a Pi, or if your Mac is on 24/7 and you don't want a separate machine.
+
+**1. Clone + run:**
+
+```bash
+git clone https://github.com/ninjawerk/home-arr.git
+cd home-arr
+./scripts/setup-macos.sh
+```
+
+The script:
+- Checks Docker Desktop is installed (offers `brew install --cask docker` if not)
+- Creates `~/Media/{movies,tv,music,books,downloads}` (override with `--media-root /Volumes/MediaSSD` if your library lives on an external drive)
+- Auto-generates `.env` (PUID, PGID, TZ, Homarr secret)
+- Seeds qBit's no-seed config
+- `docker compose pull && up -d`
+- Optionally registers `movies/tv/music/books` as native macOS SMB shares (so Infuse on Apple TV can see them at `smb://<your-mac>.local/movies`)
+
+**2. Enable File Sharing in System Settings**
+
+The script registers the shares but the master toggle for macOS file sharing is in **System Settings → General → Sharing → File Sharing** (toggle on). Without that, the shares exist but aren't broadcast.
+
+**Caveats vs the Pi path:**
+- Your Mac needs to be on (and not asleep) for the stack to be reachable. **System Settings → Lock Screen → Start Screen Saver when inactive: Never**, and **Energy → Prevent automatic sleeping when the display is off** is the usual fix.
+- Docker Desktop on macOS runs in a Linux VM, so file I/O between `~/Media` and containers is slower than native Linux. Fine for streaming, no issue at all in practice.
+- Hardware sleep behaviour on macOS laptops makes this work best on a desktop Mac (Mac mini, iMac) or a Mac that lives plugged in.
+
+---
 
 ### qBittorrent: don't seed after completion
 

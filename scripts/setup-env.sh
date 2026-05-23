@@ -13,12 +13,16 @@ fi
 puid=$(id -u)
 pgid=$(id -g)
 
-# Best-effort timezone detection
+# Best-effort timezone detection (Linux + macOS)
 if command -v timedatectl >/dev/null 2>&1; then
   tz=$(timedatectl show --property=Timezone --value 2>/dev/null || true)
 fi
 if [ -z "${tz:-}" ] && [ -f /etc/timezone ]; then
   tz=$(cat /etc/timezone)
+fi
+if [ -z "${tz:-}" ] && [ -L /etc/localtime ]; then
+  # macOS: /etc/localtime -> /var/db/timezone/zoneinfo/Asia/Colombo
+  tz=$(readlink /etc/localtime | sed -E 's|.*/zoneinfo/||')
 fi
 tz=${tz:-UTC}
 
